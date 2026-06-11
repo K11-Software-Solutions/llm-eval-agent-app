@@ -17,6 +17,6 @@ COPY . .
 # Create runtime dirs
 RUN mkdir -p data results logs
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

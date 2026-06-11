@@ -1,0 +1,29 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/llm-eval-agent:$COMMIT_SHA
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/llm-eval-agent:$COMMIT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - llm-eval-agent
+      - --image=gcr.io/$PROJECT_ID/llm-eval-agent:$COMMIT_SHA
+      - --region=us-central1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --set-secrets=GITHUB_APP_ID=GITHUB_APP_ID:latest,GITHUB_WEBHOOK_SECRET=GITHUB_WEBHOOK_SECRET:latest,GITHUB_PRIVATE_KEY=GITHUB_PRIVATE_KEY:latest
+      - --set-env-vars=RESULTS_DIR=results,CONFIG_PATH=config/config.yaml,LLM_API_URL=https://llm-eval-agent-<hash>-uc.a.run.app
+
+images:
+  - gcr.io/$PROJECT_ID/llm-eval-agent:$COMMIT_SHA

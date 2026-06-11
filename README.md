@@ -86,7 +86,48 @@ ngrok http 8000
 
 ---
 
-## Deploy to Railway (recommended for Marketplace)
+## Deploy to Google Cloud Run (recommended)
+
+### One-time setup
+
+```bash
+# Authenticate and set project
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable required APIs
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com secretmanager.googleapis.com
+
+# Store GitHub App credentials in Secret Manager
+echo -n "your_app_id" | gcloud secrets create GITHUB_APP_ID --data-file=-
+echo -n "your_webhook_secret" | gcloud secrets create GITHUB_WEBHOOK_SECRET --data-file=-
+cat private-key.pem | gcloud secrets create GITHUB_PRIVATE_KEY --data-file=-
+```
+
+### Deploy
+
+```bash
+gcloud run deploy llm-eval-agent \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --set-secrets=GITHUB_APP_ID=GITHUB_APP_ID:latest,GITHUB_WEBHOOK_SECRET=GITHUB_WEBHOOK_SECRET:latest,GITHUB_PRIVATE_KEY=GITHUB_PRIVATE_KEY:latest \
+  --set-env-vars=RESULTS_DIR=results,CONFIG_PATH=config/config.yaml
+```
+
+Your webhook URL will be:
+```
+https://llm-eval-agent-<hash>-uc.a.run.app/github/webhook
+```
+
+### Auto-deploy on push (CI/CD)
+
+Connect the repo in **Google Cloud Console → Cloud Build → Triggers** to auto-deploy on every push to `master` using the included [cloudbuild.yaml](cloudbuild.yaml).
+
+---
+
+## Deploy to Railway
 
 1. Push this repo to GitHub
 2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub repo

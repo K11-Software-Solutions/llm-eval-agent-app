@@ -76,23 +76,32 @@ Connect the repo in **Google Cloud Console → Cloud Build → Triggers** to aut
 4. Railway auto-detects the `Dockerfile` and deploys
 5. Copy the generated public URL (e.g. `https://llm-eval-agent.up.railway.app`)
 
+### Live deployment
+
+| | |
+|---|---|
+| **Base URL** | `https://llm-eval-agent-app-production.up.railway.app` |
+| **Health** | `https://llm-eval-agent-app-production.up.railway.app/health` |
+| **Swagger docs** | `https://llm-eval-agent-app-production.up.railway.app/docs` |
+| **Webhook URL** | `https://llm-eval-agent-app-production.up.railway.app/github/webhook` |
+
 ### Testing on Railway
 
 ```bash
 # Health check
-curl https://your-app.up.railway.app/health
+curl https://llm-eval-agent-app-production.up.railway.app/health
 
 # Upload test data and trigger a run
-curl -X POST https://your-app.up.railway.app/upload-data \
+curl -X POST https://llm-eval-agent-app-production.up.railway.app/upload-data \
   -F "file=@data/test_data.jsonl"
 
-curl -X POST https://your-app.up.railway.app/run-tests
+curl -X POST https://llm-eval-agent-app-production.up.railway.app/run-tests
 
-# Poll status
-curl https://your-app.up.railway.app/status/<run_id>
+# Poll status (use run_id from above response)
+curl https://llm-eval-agent-app-production.up.railway.app/status/<run_id>
 
 # Run dashboard locally against Railway backend
-LLM_API_URL=https://your-app.up.railway.app streamlit run app/llm_dashboard.py
+LLM_API_URL=https://llm-eval-agent-app-production.up.railway.app streamlit run app/llm_dashboard.py
 ```
 
 ---

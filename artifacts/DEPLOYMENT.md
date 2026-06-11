@@ -108,21 +108,77 @@ LLM_API_URL=https://llm-eval-agent-app-production.up.railway.app streamlit run a
 
 ## Register as a GitHub App
 
+### Step 1 — Generate a webhook secret
+
+Run this locally to generate a secure random secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Copy the output — you'll paste it in both GitHub and Railway.
+
+### Step 2 — Create the GitHub App
+
 1. Go to **GitHub → Settings → Developer Settings → GitHub Apps → New GitHub App**
-2. Fill in:
-   - **App name:** LLM Eval Agent
-   - **Homepage URL:** your deployed URL
-   - **Webhook URL:** `https://YOUR-URL/github/webhook`
-   - **Webhook secret:** generate a random string, add to `.env` as `GITHUB_WEBHOOK_SECRET`
-3. **Permissions:**
-   - Checks: Read & Write
-   - Contents: Read
-   - Pull requests: Read & Write
-   - Metadata: Read (mandatory)
-4. **Subscribe to events:** Pull request
+2. Fill in the following fields:
+
+| Field | Value |
+|---|---|
+| **App name** | `LLM Eval Agent` |
+| **Homepage URL** | `https://llm-eval-agent-app-production.up.railway.app` |
+| **Webhook URL** | `https://llm-eval-agent-app-production.up.railway.app/github/webhook` |
+| **Webhook secret** | *(paste the secret generated above)* |
+
+3. **Permissions** (Repository):
+   - Checks: **Read & Write**
+   - Contents: **Read**
+   - Pull requests: **Read & Write**
+   - Metadata: **Read** (mandatory)
+
+4. **Subscribe to events:** check **Pull request**
+
 5. Click **Create GitHub App**
-6. Generate a private key → download `private-key.pem` → add to deployment
-7. Note your **App ID** → add to `.env` as `GITHUB_APP_ID`
+
+### Step 3 — Save your App ID
+
+After creation, you'll land on the app settings page.  
+Note the **App ID** shown at the top (e.g. `1234567`).
+
+### Step 4 — Generate a private key
+
+1. Scroll down to **Private keys**
+2. Click **Generate a private key**
+3. A `*.pem` file downloads automatically — keep it safe
+
+### Step 5 — Add credentials to Railway
+
+In Railway dashboard → your service → **Variables**, add:
+
+| Variable | Value |
+|---|---|
+| `GITHUB_APP_ID` | your App ID from Step 3 |
+| `GITHUB_WEBHOOK_SECRET` | the secret from Step 1 |
+| `GITHUB_PRIVATE_KEY` | full contents of the `.pem` file (including `-----BEGIN/END RSA PRIVATE KEY-----` lines) |
+
+Railway auto-redeploys after saving. Health check to confirm:
+```bash
+curl https://llm-eval-agent-app-production.up.railway.app/health
+```
+
+### Step 6 — Install the app on a repo
+
+1. GitHub App settings → **Install App** (left sidebar)
+2. Choose your account → select a repo
+3. Click **Install**
+
+### Step 7 — Test with a Pull Request
+
+Open a PR in the installed repo. Within seconds:
+- A **Check Run** appears on the PR
+- After eval completes, the check updates to pass/fail with a scorecard comment
+
+**Debug tip:** GitHub App settings → **Advanced** → **Recent Deliveries** shows every webhook sent and your app's response code.
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "name": "LLM Eval Agent",
+  "url": "https://github.com/K11-Software-Solutions/llm-eval-agent-app",
+  "hook_attributes": {
+    "url": "https://YOUR-DEPLOYED-URL/github/webhook",
+    "active": true
+  },
+  "redirect_url": "https://YOUR-DEPLOYED-URL/github/callback",
+  "description": "Automated LLM safety & quality evaluation on every pull request. Posts bias, fairness, and robustness scorecards as Check Runs.",
+  "public": true,
+  "default_permissions": {
+    "checks": "write",
+    "contents": "read",
+    "pull_requests": "write",
+    "metadata": "read"
+  },
+  "default_events": [
+    "pull_request",
+    "push"
+  ]
+}

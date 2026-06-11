@@ -1,0 +1,22 @@
+# Environment
+.env
+private-key.pem
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Runtime data
+data/
+results/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

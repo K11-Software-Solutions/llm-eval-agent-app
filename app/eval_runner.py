@@ -1,0 +1,136 @@
+"""
+Background task: runs LLM eval and posts results back to GitHub.
+Called from webhook.py after a PR event triggers an eval.
+"""
+
+import json
+import logging
+import os
+from pathlib import Path
+
+from app.agent import LLMEvalAgent
+from app.github_client import GitHubClient, format_scorecard
+
+logger = logging.getLogger(__name__)
+
+RESULTS_ROOT = Path(os.environ.get("RESULTS_DIR", "results"))
+CONFIG_PATH = Path(os.environ.get("CONFIG_PATH", "config/config.yaml"))
+
+
+async def run_eval_for_pr(
+    run_id: str,
+    github: GitHubClient,
+    owner: str,
+    repo: str,
+    pr_number: int,
+    head_sha: str,
+    check_run_id: int,
+    changed_files: list[str],
+):
+    """Run eval agent and report results back to GitHub."""
+    run_dir = RESULTS_ROOT / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"[{run_id}] Starting eval for {owner}/{repo}#{pr_number}")
+
+    try:
+        agent = LLMEvalAgent(
+            config_path=str(CONFIG_PATH),
+            results_dir=str(run_dir),
+        )
+        agent.run_tests()
+
+        # Parse results to build scorecard
+        results = _parse_results(run_dir)
+        overall = "pass" if results.get("all_passed", False) else "fail"
+        results["overall"] = overall
+
+        scorecard_md = format_scorecard(results)
+        conclusion = "success" if overall == "pass" else "failure"
+
+        # Post Check Run result
+        await github.update_check_run(
+            owner=owner,
+            repo=repo,
+            check_run_id=check_run_id,
+            conclusion=conclusion,
+            summary=scorecard_md,
+        )
+
+        # Post PR comment with scorecard
+        await github.post_pr_comment(
+            owner=owner,
+            repo=repo,
+            pr_number=pr_number,
+            body=scorecard_md,
+        )
+
+        logger.info(f"[{run_id}] Eval complete — {overall.upper()}")
+
+    except Exception as e:
+        logger.error(f"[{run_id}] Eval failed: {e}", exc_info=True)
+        error_summary = f"## ❌ LLM Eval Agent — Error\n\n```\n{e}\n```"
+
+        await github.update_check_run(
+            owner=owner,
+            repo=repo,
+            check_run_id=check_run_id,
+            conclusion="failure",
+            summary=error_summary,
+            title="Eval Error",
+        )
+        await github.post_pr_comment(
+            owner=owner,
+            repo=repo,
+            pr_number=pr_number,
+            body=error_summary,
+        )
+
+
+def _parse_results(run_dir: Path) -> dict:
+    """
+    Walk run_dir for JSON reports and build a unified results dict.
+    Returns:
+    {
+        "model": str,
+        "categories": {"bias": {"pass_rate": float, "passed": bool}, ...},
+        "all_passed": bool,
+    }
+    """
+    categories = {}
+    model = "unknown"
+    all_passed = True
+
+    for json_file in run_dir.rglob("*.json"):
+        try:
+            with open(json_file) as f:
+                report = json.load(f)
+        except Exception:
+            continue
+
+        # Try to extract model name from parent dir
+        model = json_file.parent.name
+
+        if isinstance(report, dict):
+            summary = report.get("summary", {})
+            for cat, data in summary.items():
+                score = data.get("score", data.get("pass_rate", 0))
+                if isinstance(score, str) and score.endswith("%"):
+                    score = float(score.strip("%")) / 100
+                passed = float(score) >= 0.8
+                categories[cat] = {"pass_rate": float(score), "passed": passed}
+                if not passed:
+                    all_passed = False
+
+        elif isinstance(report, list):
+            for row in report:
+                cat = row.get("category", "unknown")
+                rate = row.get("pass_rate", 0)
+                if isinstance(rate, str) and rate.endswith("%"):
+                    rate = float(rate.strip("%")) / 100
+                passed = float(rate) >= 0.8
+                categories[cat] = {"pass_rate": float(rate), "passed": passed}
+                if not passed:
+                    all_passed = False
+
+    return {"model": model, "categories": categories, "all_passed": all_passed}

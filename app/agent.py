@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from pathlib import Path
 from langtest import Harness
 from app.utils import load_config, setup_logging
 
@@ -19,7 +20,8 @@ class LLMEvalAgent:
     def __init__(self, config_path="config/config.yaml", results_dir=None, data_file_override=None):
         self.config = load_config(config_path)
         self.models = self.config.get("models", [])
-        self.data_file = data_file_override or self.config.get("data", {}).get("file")
+        raw_data_file = data_file_override or self.config.get("data", {}).get("file")
+        self.data_file = Path(raw_data_file).as_posix() if raw_data_file else None
         self.categories = self.config.get("categories", ["bias", "fairness", "robustness"])
         self.thresholds = self.config.get("thresholds", {})
         self.report_formats = self.config.get("report", {}).get("format", ["text"])

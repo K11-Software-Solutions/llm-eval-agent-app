@@ -5,7 +5,7 @@ Run: uvicorn app.main:app --reload
 """
 
 from fastapi import FastAPI
-from app.api_server import app as api_app, router as api_router
+from app.api_server import router as api_router
 from app.webhook import router as webhook_router
 
 app = FastAPI(

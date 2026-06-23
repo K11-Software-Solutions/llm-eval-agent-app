@@ -3,6 +3,7 @@ Background task: runs LLM eval and posts results back to GitHub.
 Called from webhook.py after a PR event triggers an eval.
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -58,7 +59,8 @@ async def run_eval_for_pr(
             results_dir=str(run_dir),
             data_file_override=data_file,
         )
-        agent.run_tests()
+        # Run blocking langtest code in a thread to avoid event loop conflict
+        await asyncio.to_thread(agent.run_tests)
 
         # Parse results to build scorecard
         results = _parse_results(run_dir)

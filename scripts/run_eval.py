@@ -116,7 +116,7 @@ def show_report(run_id):
 # ── run evaluation ────────────────────────────────────────────────────────────
 
 def run_eval(config_path, data_file):
-    run_id   = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
+    run_id   = datetime.now().strftime("%y%m%d") + "-" + uuid.uuid4().hex[:4]
     run_dir  = RESULTS_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 

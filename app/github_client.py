@@ -187,34 +187,74 @@ def _iso_now() -> str:
 
 def format_scorecard(results: dict) -> str:
     """
-    Format eval results as a Markdown table for PR comments and Check Run summaries.
-    Expects results = {
-        "model": str,
-        "categories": {"bias": {"pass_rate": 0.9, "passed": True}, ...},
-        "overall": "pass" | "fail"
-    }
+    Format eval results as a Markdown scorecard for PR comments and Check Run summaries.
     """
+    from datetime import datetime, timezone
+
     model = results.get("model", "unknown")
     cats = results.get("categories", {})
+    tests = results.get("tests", [])
     overall = results.get("overall", "unknown")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     icon = "✅" if overall == "pass" else "❌"
+    total_pass = sum(t["pass_count"] for t in tests)
+    total_fail = sum(t["fail_count"] for t in tests)
+    total_cases = total_pass + total_fail
+
     lines = [
-        f"## {icon} LLM Eval Agent — `{model}`",
+        f"## {icon} LLM Eval Agent",
         "",
-        "| Category | Pass Rate | Result |",
-        "|----------|-----------|--------|",
+        f"**Model:** `{model}`  ",
+        f"**Overall:** {'✅ PASS' if overall == 'pass' else '❌ FAIL'}  ",
+        f"**Evaluated:** {timestamp}",
+        "",
     ]
-    for cat, data in cats.items():
-        rate = data.get("pass_rate", 0)
-        passed = data.get("passed", False)
-        result_icon = "✅ Pass" if passed else "❌ Fail"
-        lines.append(f"| {cat.title()} | {rate:.0%} | {result_icon} |")
+
+    if tests:
+        lines += [
+            "### Test Results",
+            "",
+            "| Category | Test | Passed | Failed | Pass Rate | Min Required | Status |",
+            "|----------|------|-------:|-------:|----------:|:------------:|--------|",
+        ]
+        for t in tests:
+            cat = t["category"].title()
+            test_name = t["test_type"].replace("_", " ").title()
+            status = "✅ Pass" if t["passed"] else "❌ Fail"
+            min_rate = t.get("min_pass_rate", "—")
+            lines.append(
+                f"| {cat} | {test_name} | {t['pass_count']} | {t['fail_count']} | {t['pass_rate']:.0%} | {min_rate} | {status} |"
+            )
+    else:
+        lines += [
+            "### Results by Category",
+            "",
+            "| Category | Pass Rate | Status |",
+            "|----------|----------:|--------|",
+        ]
+        for cat, data in cats.items():
+            rate = data.get("pass_rate", 0)
+            passed = data.get("passed", False)
+            lines.append(f"| {cat.title()} | {rate:.0%} | {'✅ Pass' if passed else '❌ Fail'} |")
+
+    if total_cases > 0:
+        lines += [
+            "",
+            f"> **{total_pass}/{total_cases}** test cases passed across {len(tests)} test(s)",
+        ]
+
+    if overall == "fail":
+        failed = [t["test_type"].replace("_", " ") for t in tests if not t["passed"]]
+        if failed:
+            lines += [
+                "",
+                "**Failing tests:** " + ", ".join(f"`{f}`" for f in failed),
+            ]
 
     lines += [
         "",
-        f"**Overall: {overall.upper()}**",
-        "",
+        "---",
         "_Powered by [LLM Eval Agent](https://github.com/K11-Software-Solutions/llm-eval-agent-app)_",
     ]
     return "\n".join(lines)

@@ -142,6 +142,7 @@ def _parse_results(run_dir: Path) -> dict:
     }
     """
     categories = {}
+    tests = []          # per-test rows for detailed scorecard
     model = "unknown"
     all_passed = True
 
@@ -175,12 +176,25 @@ def _parse_results(run_dir: Path) -> dict:
             cat_rows: dict = {}
             for idx in report["category"]:
                 cat = report["category"][idx]
+                test_type = report.get("test_type", {}).get(idx, "")
                 rate_raw = report.get("pass_rate", {}).get(idx, "0%")
+                min_rate_raw = report.get("minimum_pass_rate", {}).get(idx, "")
+                pass_count = int(report.get("pass_count", {}).get(idx, 0))
+                fail_count = int(report.get("fail_count", {}).get(idx, 0))
                 passed_val = report.get("pass", {}).get(idx, False)
                 if isinstance(rate_raw, str) and rate_raw.endswith("%"):
                     rate = float(rate_raw.strip("%")) / 100
                 else:
                     rate = float(rate_raw or 0)
+                tests.append({
+                    "category": cat,
+                    "test_type": test_type,
+                    "pass_count": pass_count,
+                    "fail_count": fail_count,
+                    "pass_rate": rate,
+                    "min_pass_rate": min_rate_raw,
+                    "passed": bool(passed_val),
+                })
                 if cat not in cat_rows:
                     cat_rows[cat] = {"rates": [], "passed": True}
                 cat_rows[cat]["rates"].append(rate)
@@ -206,4 +220,4 @@ def _parse_results(run_dir: Path) -> dict:
     if not categories:
         all_passed = False
 
-    return {"model": model, "categories": categories, "all_passed": all_passed}
+    return {"model": model, "categories": categories, "tests": tests, "all_passed": all_passed}

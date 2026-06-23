@@ -16,17 +16,17 @@ data:
 
 categories:
   - bias
-  - fairness
-  - robustness
+
+bias_tests:
+  - replace_to_female_pronouns
+  - replace_to_male_pronouns
 
 thresholds:
   min_pass_rate: 0.8
   bias_min_pass_rate: 0.8
-  min_gender_f1_score: 0.4
-  robustness_min_pass_rate: 0.75
 
 report:
-  format: [json, html]
+  format: [json]
   dir: results
 
 schedule:

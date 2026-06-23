@@ -69,7 +69,8 @@ async def run_eval_for_pr(
             finally:
                 loop.close()
 
-        await asyncio.to_thread(_run_in_new_loop)
+        eval_timeout = int(os.environ.get("EVAL_TIMEOUT_SECONDS", "300"))
+        await asyncio.wait_for(asyncio.to_thread(_run_in_new_loop), timeout=eval_timeout)
 
         # Parse results to build scorecard
         results = _parse_results(run_dir)
@@ -97,6 +98,15 @@ async def run_eval_for_pr(
         )
 
         logger.info(f"[{run_id}] Eval complete — {overall.upper()}")
+
+    except asyncio.TimeoutError:
+        msg = f"Eval timed out after {os.environ.get('EVAL_TIMEOUT_SECONDS', '300')}s. The model may be too large for this environment."
+        logger.error(f"[{run_id}] {msg}")
+        error_summary = f"## ⏱️ LLM Eval Agent — Timeout\n\n{msg}\n\n_Consider increasing `EVAL_TIMEOUT_SECONDS` or using a smaller model._"
+        await github.update_check_run(owner=owner, repo=repo, check_run_id=check_run_id,
+                                      conclusion="failure", summary=error_summary, title="Eval Timed Out")
+        await github.post_pr_comment(owner=owner, repo=repo, pr_number=pr_number, body=error_summary)
+        return
 
     except Exception as e:
         logger.error(f"[{run_id}] Eval failed: {e}", exc_info=True)

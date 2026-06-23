@@ -1,8 +1,8 @@
 """
 Automated test script for LLM Eval Agent — Railway deployment.
 Usage:
-    python artifacts/test_deployment.py
-    python artifacts/test_deployment.py --url https://your-other-url.up.railway.app
+    python scripts/test_deployment.py
+    python scripts/test_deployment.py --url https://your-other-url.up.railway.app
 """
 
 import argparse
@@ -95,7 +95,7 @@ def check_runs_list(base, run_id):
     r = requests.get(f"{base}/runs", timeout=10)
     assert r.status_code == 200, r.text
     runs = r.json().get("runs", [])
-    ids = [r["run_id"] for r in runs]
+    ids = [run["run_id"] for run in runs]
     assert run_id in ids, f"run_id {run_id} not found in /runs"
     ok(f"Found {len(runs)} total run(s) — current run listed")
 
@@ -138,7 +138,7 @@ def main():
     except AssertionError as e:
         fail(str(e))
     except requests.exceptions.ConnectionError:
-        fail(f"Could not connect to {base} — is it deployed?")
+        fail(f"Could not connect to {base} -- is it deployed?")
 
 
 if __name__ == "__main__":

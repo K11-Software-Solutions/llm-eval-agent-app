@@ -65,7 +65,10 @@ async def github_webhook(
         raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     event = x_github_event
-    payload = json.loads(body)
+    try:
+        payload = json.loads(body)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
 
     if event == "ping":
         return {"message": "pong"}
@@ -86,11 +89,21 @@ async def github_webhook(
     pr_number = pr["number"]
     head_sha = pr["head"]["sha"]
 
-    logger.info(f"PR #{pr_number} {action} on {repo_owner}/{repo_name} @ {head_sha}")
+    logger.info(f"PR #{pr_number} {action} on {repo_owner}/{repo_name} @ {head_sha} (install={installation_id})")
+
+    if not installation_id:
+        raise HTTPException(status_code=400, detail="Missing installation_id in payload — is the App installed on this repo?")
+
+    if not APP_ID:
+        raise HTTPException(status_code=500, detail="GITHUB_APP_ID env var not set")
 
     # Fetch changed files from GitHub API
-    github = GitHubClient(installation_id=installation_id)
-    changed_files = await github.get_pr_files(repo_owner, repo_name, pr_number)
+    try:
+        github = GitHubClient(installation_id=installation_id)
+        changed_files = await github.get_pr_files(repo_owner, repo_name, pr_number)
+    except Exception as e:
+        logger.error(f"GitHub API error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"GitHub API error: {e}")
 
     if not _should_trigger(changed_files):
         logger.info("No trigger-pattern files changed — skipping eval")

@@ -24,10 +24,17 @@ PRIVATE_KEY = os.environ.get("GITHUB_PRIVATE_KEY", "")  # raw PEM string (for cl
 
 
 def _load_private_key() -> str:
-    if PRIVATE_KEY:
-        return PRIVATE_KEY
-    with open(PRIVATE_KEY_PATH, "r") as f:
-        return f.read()
+    raw = PRIVATE_KEY
+    if not raw:
+        with open(PRIVATE_KEY_PATH, "r") as f:
+            raw = f.read()
+    # Railway sometimes stores literal \n instead of real newlines — fix both
+    raw = raw.replace("\\n", "\n")
+    # Ensure header/footer are on their own lines
+    if "-----BEGIN" in raw and "\n" not in raw.split("-----BEGIN")[0] + "BEGIN":
+        raw = raw.replace("-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----\n")
+        raw = raw.replace("-----END RSA PRIVATE KEY-----", "\n-----END RSA PRIVATE KEY-----")
+    return raw.strip()
 
 
 def _generate_jwt() -> str:
@@ -37,7 +44,7 @@ def _generate_jwt() -> str:
     payload = {
         "iat": now - 60,   # issued 60s ago (clock skew buffer)
         "exp": now + 540,  # expires in 9 minutes
-        "iss": APP_ID,
+        "iss": int(APP_ID),  # GitHub requires integer App ID
     }
     return jwt.encode(payload, private_key, algorithm="RS256")
 

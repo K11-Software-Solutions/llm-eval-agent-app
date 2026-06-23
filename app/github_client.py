@@ -24,16 +24,27 @@ PRIVATE_KEY = os.environ.get("GITHUB_PRIVATE_KEY", "")  # raw PEM string (for cl
 
 
 def _load_private_key() -> str:
+    import base64
     raw = PRIVATE_KEY
     if not raw:
         with open(PRIVATE_KEY_PATH, "r") as f:
-            raw = f.read()
-    # Railway sometimes stores literal \n instead of real newlines — fix both
+            return f.read()
+
+    raw = raw.strip()
+
+    # If stored as base64 (no PEM header) — decode first
+    if not raw.startswith("-----"):
+        try:
+            raw = base64.b64decode(raw).decode("utf-8")
+        except Exception:
+            pass  # not base64, use as-is
+
+    # Fix Railway literal \n escaping
     raw = raw.replace("\\n", "\n")
-    # Ensure header/footer are on their own lines
-    if "-----BEGIN" in raw and "\n" not in raw.split("-----BEGIN")[0] + "BEGIN":
-        raw = raw.replace("-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----\n")
-        raw = raw.replace("-----END RSA PRIVATE KEY-----", "\n-----END RSA PRIVATE KEY-----")
+
+    # Normalize line endings
+    raw = raw.replace("\r\n", "\n").replace("\r", "\n")
+
     return raw.strip()
 
 

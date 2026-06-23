@@ -145,13 +145,17 @@ def _parse_results(run_dir: Path) -> dict:
     model = "unknown"
     all_passed = True
 
-    for json_file in run_dir.rglob("*.json"):
+    json_files = list(run_dir.rglob("*.json"))
+    logger.info(f"_parse_results: found {len(json_files)} JSON file(s) in {run_dir}")
+
+    for json_file in json_files:
         try:
             with open(json_file) as f:
                 report = json.load(f)
         except Exception:
             continue
 
+        logger.info(f"_parse_results: parsing {json_file.name}, type={type(report).__name__}, keys={list(report.keys()) if isinstance(report, dict) else 'list'}")
         # Try to extract model name from parent dir
         model = json_file.parent.name
 

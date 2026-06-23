@@ -89,13 +89,16 @@ async def run_eval_for_pr(
             summary=scorecard_md,
         )
 
-        # Post PR comment with scorecard
-        await github.post_pr_comment(
-            owner=owner,
-            repo=repo,
-            pr_number=pr_number,
-            body=scorecard_md,
-        )
+        # Post PR comment — best-effort, don't let a 403 overwrite the Check Run
+        try:
+            await github.post_pr_comment(
+                owner=owner,
+                repo=repo,
+                pr_number=pr_number,
+                body=scorecard_md,
+            )
+        except Exception as comment_err:
+            logger.warning(f"[{run_id}] PR comment failed (non-fatal): {comment_err}")
 
         logger.info(f"[{run_id}] Eval complete — {overall.upper()}")
 

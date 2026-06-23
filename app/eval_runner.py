@@ -155,7 +155,40 @@ def _parse_results(run_dir: Path) -> dict:
         # Try to extract model name from parent dir
         model = json_file.parent.name
 
-        if isinstance(report, dict):
+        if isinstance(report, list):
+            for row in report:
+                cat = row.get("category", "unknown")
+                rate = row.get("pass_rate", 0)
+                if isinstance(rate, str) and rate.endswith("%"):
+                    rate = float(rate.strip("%")) / 100
+                passed = float(rate) >= 0.8
+                categories[cat] = {"pass_rate": float(rate), "passed": passed}
+                if not passed:
+                    all_passed = False
+
+        elif isinstance(report, dict) and isinstance(report.get("category"), dict):
+            # LangTest pandas-style JSON: {"category":{"0":"bias",...}, "pass_rate":{"0":"100%",...}}
+            cat_rows: dict = {}
+            for idx in report["category"]:
+                cat = report["category"][idx]
+                rate_raw = report.get("pass_rate", {}).get(idx, "0%")
+                passed_val = report.get("pass", {}).get(idx, False)
+                if isinstance(rate_raw, str) and rate_raw.endswith("%"):
+                    rate = float(rate_raw.strip("%")) / 100
+                else:
+                    rate = float(rate_raw or 0)
+                if cat not in cat_rows:
+                    cat_rows[cat] = {"rates": [], "passed": True}
+                cat_rows[cat]["rates"].append(rate)
+                if not passed_val:
+                    cat_rows[cat]["passed"] = False
+            for cat, data in cat_rows.items():
+                avg_rate = sum(data["rates"]) / len(data["rates"])
+                categories[cat] = {"pass_rate": avg_rate, "passed": data["passed"]}
+                if not data["passed"]:
+                    all_passed = False
+
+        elif isinstance(report, dict):
             summary = report.get("summary", {})
             for cat, data in summary.items():
                 score = data.get("score", data.get("pass_rate", 0))
@@ -166,15 +199,7 @@ def _parse_results(run_dir: Path) -> dict:
                 if not passed:
                     all_passed = False
 
-        elif isinstance(report, list):
-            for row in report:
-                cat = row.get("category", "unknown")
-                rate = row.get("pass_rate", 0)
-                if isinstance(rate, str) and rate.endswith("%"):
-                    rate = float(rate.strip("%")) / 100
-                passed = float(rate) >= 0.8
-                categories[cat] = {"pass_rate": float(rate), "passed": passed}
-                if not passed:
-                    all_passed = False
+    if not categories:
+        all_passed = False
 
     return {"model": model, "categories": categories, "all_passed": all_passed}

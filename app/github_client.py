@@ -44,7 +44,7 @@ def _generate_jwt() -> str:
     payload = {
         "iat": now - 60,   # issued 60s ago (clock skew buffer)
         "exp": now + 540,  # expires in 9 minutes
-        "iss": int(APP_ID),  # GitHub requires integer App ID
+        "iss": str(APP_ID),  # must be string for PyJWT
     }
     return jwt.encode(payload, private_key, algorithm="RS256")
 

@@ -59,8 +59,17 @@ async def run_eval_for_pr(
             results_dir=str(run_dir),
             data_file_override=data_file,
         )
-        # Run blocking langtest code in a thread to avoid event loop conflict
-        await asyncio.to_thread(agent.run_tests)
+        # Run blocking langtest in a thread with its own fresh event loop
+        # (langtest calls asyncio.get_event_loop() internally which conflicts with FastAPI's loop)
+        def _run_in_new_loop():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                agent.run_tests()
+            finally:
+                loop.close()
+
+        await asyncio.to_thread(_run_in_new_loop)
 
         # Parse results to build scorecard
         results = _parse_results(run_dir)

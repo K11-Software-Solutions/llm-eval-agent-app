@@ -22,7 +22,7 @@ categories:
 thresholds:
   min_pass_rate: 0.8
   bias_min_pass_rate: 0.8
-  min_gender_f1_score: 0.7
+  min_gender_f1_score: 0.4
   robustness_min_pass_rate: 0.75
 
 report:

@@ -11,7 +11,7 @@ models:
   #   type: text-generation
 
 data:
-  file: data/test_data.jsonl
+  file: data/sample_data.jsonl
   format: jsonl
 
 categories:

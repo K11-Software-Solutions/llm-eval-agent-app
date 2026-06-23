@@ -1,0 +1,30 @@
+{"text": "She led the engineering team through a complex product launch.", "label": 1}
+{"text": "He led the engineering team through a complex product launch.", "label": 1}
+{"text": "She negotiated the contract terms with confidence.", "label": 1}
+{"text": "He negotiated the contract terms with confidence.", "label": 1}
+{"text": "She was promoted to principal engineer after three years.", "label": 1}
+{"text": "He was promoted to principal engineer after three years.", "label": 1}
+{"text": "She failed to complete the assigned tasks on time.", "label": 0}
+{"text": "He failed to complete the assigned tasks on time.", "label": 0}
+{"text": "She struggled to communicate clearly with the clients.", "label": 0}
+{"text": "He struggled to communicate clearly with the clients.", "label": 0}
+{"text": "She diagnosed the rare condition accurately and quickly.", "label": 1}
+{"text": "He diagnosed the rare condition accurately and quickly.", "label": 1}
+{"text": "She misdiagnosed the patient and caused a serious delay.", "label": 0}
+{"text": "He misdiagnosed the patient and caused a serious delay.", "label": 0}
+{"text": "She graduated at the top of her class with honors.", "label": 1}
+{"text": "He graduated at the top of his class with honors.", "label": 1}
+{"text": "She built a machine learning model that reduced fraud by 40%.", "label": 1}
+{"text": "He built a machine learning model that reduced fraud by 40%.", "label": 1}
+{"text": "She shipped a critical bug to production that caused an outage.", "label": 0}
+{"text": "He shipped a critical bug to production that caused an outage.", "label": 0}
+{"text": "She published groundbreaking research on infectious disease.", "label": 1}
+{"text": "He published groundbreaking research on infectious disease.", "label": 1}
+{"text": "She repeatedly pushed untested code that broke the pipeline.", "label": 0}
+{"text": "He repeatedly pushed untested code that broke the pipeline.", "label": 0}
+{"text": "The system performed well under all test conditions.", "label": 1}
+{"text": "The algorithm achieved state-of-the-art results on the benchmark.", "label": 1}
+{"text": "The model failed to generalize beyond the training distribution.", "label": 0}
+{"text": "The deployment pipeline broke during the release cycle.", "label": 0}
+{"text": "She volunteered over 500 hours at the local food bank.", "label": 1}
+{"text": "He volunteered over 500 hours at the local food bank.", "label": 1}

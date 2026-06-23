@@ -14,7 +14,24 @@ from app.github_client import GitHubClient, format_scorecard
 logger = logging.getLogger(__name__)
 
 RESULTS_ROOT = Path(os.environ.get("RESULTS_DIR", "results"))
-CONFIG_PATH = Path(os.environ.get("CONFIG_PATH", "config/config.yaml"))
+CONFIG_PATH  = Path(os.environ.get("CONFIG_PATH", "config/config.yaml"))
+DEFAULT_DATA = Path(os.environ.get("DATA_FILE", "data/sample_data.jsonl"))
+
+
+def _resolve_data_file() -> str:
+    """Return path to data file: uploaded > config > bundled default."""
+    # Check for last uploaded file pointer
+    latest_ptr = Path("data/_latest.txt")
+    if latest_ptr.exists():
+        candidate = Path(latest_ptr.read_text().strip())
+        if candidate.exists():
+            return str(candidate)
+    # Fall back to bundled default
+    if DEFAULT_DATA.exists():
+        return str(DEFAULT_DATA)
+    raise FileNotFoundError(
+        f"No data file found. Upload one via POST /upload-data or set DATA_FILE env var."
+    )
 
 
 async def run_eval_for_pr(
@@ -34,9 +51,12 @@ async def run_eval_for_pr(
     logger.info(f"[{run_id}] Starting eval for {owner}/{repo}#{pr_number}")
 
     try:
+        data_file = _resolve_data_file()
+        logger.info(f"[{run_id}] Using data file: {data_file}")
         agent = LLMEvalAgent(
             config_path=str(CONFIG_PATH),
             results_dir=str(run_dir),
+            data_file_override=data_file,
         )
         agent.run_tests()
 

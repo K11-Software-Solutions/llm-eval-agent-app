@@ -37,6 +37,26 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/debug/jwt")
+async def debug_jwt():
+    """Test JWT generation and GitHub App authentication."""
+    import httpx
+    from app.github_client import _generate_jwt, APP_ID
+    try:
+        token = _generate_jwt()
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                "https://api.github.com/app",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                }
+            )
+        return {"app_id": APP_ID, "status": resp.status_code, "body": resp.json()}
+    except Exception as e:
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
 @app.get("/debug/env")
 def debug_env():
     """Show which critical env vars are configured (values masked)."""

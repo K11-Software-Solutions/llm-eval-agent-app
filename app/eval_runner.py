@@ -69,7 +69,7 @@ async def run_eval_for_pr(
             finally:
                 loop.close()
 
-        eval_timeout = int(os.environ.get("EVAL_TIMEOUT_SECONDS", "300"))
+        eval_timeout = int(os.environ.get("EVAL_TIMEOUT_SECONDS", "600"))
         await asyncio.wait_for(asyncio.to_thread(_run_in_new_loop), timeout=eval_timeout)
 
         # Parse results to build scorecard

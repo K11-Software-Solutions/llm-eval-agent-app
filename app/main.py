@@ -40,8 +40,14 @@ def health():
 @app.get("/debug/env")
 def debug_env():
     """Show which critical env vars are configured (values masked)."""
+    raw_key = os.environ.get("GITHUB_PRIVATE_KEY", "")
     return {
-        "GITHUB_APP_ID":         "set" if os.environ.get("GITHUB_APP_ID") else "MISSING",
-        "GITHUB_PRIVATE_KEY":    "set" if os.environ.get("GITHUB_PRIVATE_KEY") else "MISSING",
+        "GITHUB_APP_ID":         os.environ.get("GITHUB_APP_ID", "MISSING"),
+        "GITHUB_PRIVATE_KEY":    "set" if raw_key else "MISSING",
         "GITHUB_WEBHOOK_SECRET": "set" if os.environ.get("GITHUB_WEBHOOK_SECRET") else "MISSING",
+        "key_length":            len(raw_key),
+        "key_has_real_newlines": "\n" in raw_key,
+        "key_has_escaped_n":     "\\n" in raw_key,
+        "key_first_40":          raw_key[:40].replace("\n", "<NL>"),
+        "key_has_begin":         "BEGIN" in raw_key,
     }

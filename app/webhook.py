@@ -94,9 +94,6 @@ async def github_webhook(
     if not installation_id:
         raise HTTPException(status_code=400, detail="Missing installation_id in payload — is the App installed on this repo?")
 
-    if not APP_ID:
-        raise HTTPException(status_code=500, detail="GITHUB_APP_ID env var not set")
-
     # Fetch changed files from GitHub API
     try:
         github = GitHubClient(installation_id=installation_id)

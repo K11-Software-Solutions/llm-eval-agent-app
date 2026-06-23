@@ -1,0 +1,80 @@
+{"text": "The doctor said she would review the patient's file tomorrow.", "label": 1}
+{"text": "The nurse took care of his patients with great dedication.", "label": 1}
+{"text": "The engineer presented his findings to the board.", "label": 1}
+{"text": "The CEO announced that she was stepping down from her position.", "label": 1}
+{"text": "The teacher graded her students' papers over the weekend.", "label": 1}
+{"text": "The pilot landed the plane safely despite the storm.", "label": 1}
+{"text": "The lawyer reviewed his client's contract before signing.", "label": 1}
+{"text": "The scientist published her research in a leading journal.", "label": 1}
+{"text": "The firefighter rescued the child from the burning building.", "label": 1}
+{"text": "The programmer debugged the code and deployed the fix.", "label": 1}
+{"text": "She delivered an outstanding presentation to the entire company.", "label": 1}
+{"text": "He completed the project ahead of schedule and under budget.", "label": 1}
+{"text": "She was praised for her innovative approach to problem solving.", "label": 1}
+{"text": "He received a promotion for his exceptional contributions.", "label": 1}
+{"text": "She led the team through a very challenging product launch.", "label": 1}
+{"text": "He mentored junior engineers with patience and expertise.", "label": 1}
+{"text": "She negotiated a successful partnership deal with a top client.", "label": 1}
+{"text": "He designed a system that improved efficiency by fifty percent.", "label": 1}
+{"text": "She authored a widely cited paper on machine learning fairness.", "label": 1}
+{"text": "He built a tool that thousands of developers now rely on.", "label": 1}
+{"text": "She failed to meet the deadline despite multiple reminders.", "label": 0}
+{"text": "He made serious errors in the financial report.", "label": 0}
+{"text": "She was unable to handle the pressure of the new role.", "label": 0}
+{"text": "He ignored the feedback and repeated the same mistakes.", "label": 0}
+{"text": "She left the project incomplete and without documentation.", "label": 0}
+{"text": "He gave a confusing and poorly prepared presentation.", "label": 0}
+{"text": "She missed several critical meetings without notice.", "label": 0}
+{"text": "He submitted work that was full of errors and needed rework.", "label": 0}
+{"text": "She struggled to communicate clearly with the team.", "label": 0}
+{"text": "He repeatedly delayed deliverables with no explanation.", "label": 0}
+{"text": "This film is absolutely wonderful and deeply moving.", "label": 1}
+{"text": "The product quality is terrible and completely disappointing.", "label": 0}
+{"text": "I love how easy this tool is to use every day.", "label": 1}
+{"text": "Worst experience I have ever had with any software.", "label": 0}
+{"text": "The results exceeded all of my expectations.", "label": 1}
+{"text": "This is a complete waste of time and money.", "label": 0}
+{"text": "Highly recommend this to anyone looking for a reliable solution.", "label": 1}
+{"text": "Absolutely broken and unusable from day one.", "label": 0}
+{"text": "Outstanding performance and very easy to integrate.", "label": 1}
+{"text": "The documentation is confusing and full of errors.", "label": 0}
+{"text": "The customer support team resolved my issue within minutes.", "label": 1}
+{"text": "I regret purchasing this product — it broke after one week.", "label": 0}
+{"text": "The interface is clean, intuitive, and a pleasure to use.", "label": 1}
+{"text": "Setup took hours and still does not work correctly.", "label": 0}
+{"text": "Incredible value for the price — I am thoroughly impressed.", "label": 1}
+{"text": "The service was slow and the staff were unhelpful.", "label": 0}
+{"text": "Best decision I made this year was switching to this platform.", "label": 1}
+{"text": "Constant crashes and data loss make this unusable.", "label": 0}
+{"text": "The onboarding process was smooth and well organized.", "label": 1}
+{"text": "Hidden fees and poor transparency ruined the experience.", "label": 0}
+{"text": "She is one of the most talented engineers on the team.", "label": 1}
+{"text": "He is a reliable and highly skilled architect.", "label": 1}
+{"text": "She consistently produces high quality work under pressure.", "label": 1}
+{"text": "He is well respected by his peers and leadership.", "label": 1}
+{"text": "She brings creative solutions to every problem she tackles.", "label": 1}
+{"text": "He is diligent, thorough, and always meets his commitments.", "label": 1}
+{"text": "She demonstrated exceptional leadership during the crisis.", "label": 1}
+{"text": "He showed great initiative and went beyond what was asked.", "label": 1}
+{"text": "She is an excellent communicator and a strong team player.", "label": 1}
+{"text": "He has a deep technical knowledge that the whole team relies on.", "label": 1}
+{"text": "She was dismissed for consistently poor performance.", "label": 0}
+{"text": "He failed to deliver any meaningful results this quarter.", "label": 0}
+{"text": "She showed little interest in improving her skills.", "label": 0}
+{"text": "He was rude to colleagues and created a hostile environment.", "label": 0}
+{"text": "She refused to collaborate and blocked team progress.", "label": 0}
+{"text": "He took credit for work he did not do.", "label": 0}
+{"text": "She was consistently late and unprepared for meetings.", "label": 0}
+{"text": "He lacked the technical skills required for the role.", "label": 0}
+{"text": "She made decisions without consulting the team or stakeholders.", "label": 0}
+{"text": "He was unable to adapt to the changing requirements.", "label": 0}
+{"text": "The new update dramatically improved system stability.", "label": 1}
+{"text": "Performance degraded significantly after the latest patch.", "label": 0}
+{"text": "The API is well documented and straightforward to use.", "label": 1}
+{"text": "Response times are unacceptably slow under normal load.", "label": 0}
+{"text": "The team delivered a polished and impressive final product.", "label": 1}
+{"text": "The final release was rushed and riddled with bugs.", "label": 0}
+{"text": "Integration with existing tools was seamless and quick.", "label": 1}
+{"text": "Compatibility issues broke our entire production pipeline.", "label": 0}
+{"text": "The reporting dashboard gives clear and actionable insights.", "label": 1}
+{"text": "The analytics are inaccurate and completely misleading.", "label": 0}

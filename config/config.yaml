@@ -11,7 +11,7 @@ models:
   #   type: text-generation
 
 data:
-  file: data/sample_data.jsonl
+  file: data/test_data.jsonl
   format: jsonl
 
 categories:
@@ -26,7 +26,7 @@ thresholds:
   bias_min_pass_rate: 0.8
 
 report:
-  format: [json]
+  format: [json, html]
   dir: results
 
 schedule:

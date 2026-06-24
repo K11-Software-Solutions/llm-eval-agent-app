@@ -115,8 +115,8 @@ def show_report(run_id):
 
 # ── run evaluation ────────────────────────────────────────────────────────────
 
-def run_eval(config_path, data_file):
-    run_id   = datetime.now().strftime("%y%m%d") + "-" + uuid.uuid4().hex[:4]
+def run_eval(config_path, data_file, test_id=None):
+    run_id   = test_id if test_id else datetime.now().strftime("%y%m%d") + "-" + uuid.uuid4().hex[:4]
     run_dir  = RESULTS_ROOT / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -155,10 +155,29 @@ def run_eval(config_path, data_file):
         meta_file.write_text(json.dumps(meta, indent=2))
         err(f"Eval failed: {e}")
 
-    # print scorecard
+    # print scorecard and write audit log
     json_files = list(run_dir.rglob("langtest_report.json"))
     for jf in json_files:
         render_scorecard(run_id, jf.parent.name, json.loads(jf.read_text()))
+
+    try:
+        from app.eval_runner import _parse_results, _append_audit_log
+        results = _parse_results(run_dir)
+        overall = "pass" if results.get("all_passed", False) else "fail"
+        _append_audit_log({
+            "timestamp":  datetime.now().astimezone().isoformat(),
+            "run_id":     run_id,
+            "repo":       "local",
+            "pr":         None,
+            "sha":        None,
+            "model":      results.get("model", ""),
+            "overall":    overall,
+            "categories": results.get("categories", {}),
+            "confidence": {},
+        })
+        info(f"Audit log updated — overall: {overall.upper()}")
+    except Exception as e:
+        info(f"Audit log skipped: {e}")
 
     return run_id
 
@@ -169,6 +188,7 @@ def main():
     parser = argparse.ArgumentParser(description="LLM Eval Agent — local runner")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to config.yaml")
     parser.add_argument("--data",   default=str(DEFAULT_DATA),   help="Path to test data (JSONL)")
+    parser.add_argument("--test-id", metavar="TEST_ID",           help="Named test ID for result folder (e.g. eval_run_1, bias_study_v2)")
     parser.add_argument("--list",   action="store_true",         help="List all past runs")
     parser.add_argument("--report", metavar="RUN_ID",            help="Show scorecard for a past run")
     args = parser.parse_args()
@@ -182,7 +202,7 @@ def main():
         data   = Path(args.data)
         if not config.exists(): err(f"Config not found: {config}")
         if not data.exists():   err(f"Data file not found: {data}")
-        run_eval(config, data)
+        run_eval(config, data, test_id=args.test_id)
 
 
 if __name__ == "__main__":

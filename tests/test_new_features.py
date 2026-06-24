@@ -5,6 +5,8 @@ Unit tests for new features:
   - Red-teaming / robustness tests in config + agent
   - Block merge on failure (Check Run conclusion wiring)
   - Custom data upload (POST /upload-data) — extended coverage
+  - Trend chart (sparkline, render_table, render_csv, load_entries, GET /trend)
+  - Scheduled eval (start_scheduler disabled, cron config validation)
 """
 
 import json
@@ -388,3 +390,208 @@ class TestCustomDataUpload:
             with open(f, "rb") as fh:
                 r = api_client.post("/upload-data", files={"file": (name, fh)})
             assert r.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Trend chart — sparkline, render_table, render_csv, load_entries, GET /trend
+# ---------------------------------------------------------------------------
+
+class TestTrendChart:
+
+    def _sample_entries(self):
+        return [
+            {
+                "timestamp": "2026-06-01T00:00:00+00:00",
+                "run_id": "run_1",
+                "repo": "owner/repo",
+                "pr": 1,
+                "sha": "abc1",
+                "model": "distilbert-base-uncased-finetuned-sst-2-english",
+                "overall": "pass",
+                "categories": {
+                    "bias": {"pass_rate": 1.0, "passed": True},
+                    "robustness": {"pass_rate": 0.85, "passed": True},
+                },
+                "confidence": {"avg_confidence": 0.92},
+            },
+            {
+                "timestamp": "2026-06-08T00:00:00+00:00",
+                "run_id": "run_2",
+                "repo": "owner/repo",
+                "pr": 2,
+                "sha": "abc2",
+                "model": "distilbert-base-uncased-finetuned-sst-2-english",
+                "overall": "fail",
+                "categories": {
+                    "bias": {"pass_rate": 0.6, "passed": False},
+                    "robustness": {"pass_rate": 0.9, "passed": True},
+                },
+                "confidence": {"avg_confidence": 0.78},
+            },
+        ]
+
+    def test_sparkline_same_values_returns_all_low(self):
+        from scripts.trend_chart import _sparkline
+        result = _sparkline([0.9, 0.9, 0.9])
+        assert all(c == result[0] for c in result)
+
+    def test_sparkline_ascending_values(self):
+        from scripts.trend_chart import _sparkline
+        result = _sparkline([0.5, 0.7, 0.9])
+        assert result[0] <= result[-1]  # last char is higher block
+
+    def test_sparkline_empty_returns_empty_string(self):
+        from scripts.trend_chart import _sparkline
+        assert _sparkline([]) == ""
+
+    def test_load_entries_returns_empty_on_missing_file(self, tmp_path):
+        from scripts.trend_chart import load_entries
+        result = load_entries(tmp_path / "nonexistent.jsonl")
+        assert result == []
+
+    def test_load_entries_skips_malformed_lines(self, tmp_path):
+        log = tmp_path / "audit.jsonl"
+        log.write_text('{"timestamp": "2026-06-01", "overall": "pass"}\nBAD JSON\n')
+        from scripts.trend_chart import load_entries
+        entries = load_entries(log)
+        assert len(entries) == 1
+        assert entries[0]["overall"] == "pass"
+
+    def test_load_entries_sorted_by_timestamp(self, tmp_path):
+        log = tmp_path / "audit.jsonl"
+        log.write_text(
+            '{"timestamp": "2026-06-08"}\n'
+            '{"timestamp": "2026-06-01"}\n'
+        )
+        from scripts.trend_chart import load_entries
+        entries = load_entries(log)
+        assert entries[0]["timestamp"] < entries[1]["timestamp"]
+
+    def test_render_table_no_entries(self):
+        from scripts.trend_chart import render_table
+        out = render_table([], "")
+        assert "No eval runs recorded" in out
+
+    def test_render_table_contains_pass_and_fail(self):
+        from scripts.trend_chart import render_table
+        out = render_table(self._sample_entries(), "")
+        assert "PASS" in out
+        assert "FAIL" in out
+
+    def test_render_table_contains_model_name(self):
+        from scripts.trend_chart import render_table
+        out = render_table(self._sample_entries(), "")
+        assert "distilbert" in out
+
+    def test_render_table_sparkline_present(self):
+        from scripts.trend_chart import render_table
+        out = render_table(self._sample_entries(), "")
+        # At least one sparkline block character should appear
+        assert any(c in out for c in "▁▂▃▄▅▆▇█")
+
+    def test_render_table_entry_count_in_footer(self):
+        from scripts.trend_chart import render_table
+        out = render_table(self._sample_entries(), "")
+        assert "2 eval run(s)" in out
+
+    def test_render_csv_has_headers(self):
+        from scripts.trend_chart import render_csv
+        out = render_csv(self._sample_entries())
+        first_line = out.splitlines()[0]
+        assert "timestamp" in first_line
+        assert "model" in first_line
+        assert "overall" in first_line
+
+    def test_render_csv_has_correct_row_count(self):
+        from scripts.trend_chart import render_csv
+        out = render_csv(self._sample_entries())
+        lines = [l for l in out.splitlines() if l.strip()]
+        assert len(lines) == 3  # header + 2 data rows
+
+    def test_render_csv_empty_returns_header_only(self):
+        from scripts.trend_chart import render_csv
+        out = render_csv([])
+        assert "timestamp" in out
+        assert len(out.splitlines()) == 1
+
+    def test_get_trend_endpoint_no_log(self, api_client, tmp_path, monkeypatch):
+        import app.api_server as srv
+        monkeypatch.setattr(srv, "BASE_DIR", tmp_path)
+        r = api_client.get("/trend")
+        assert r.status_code == 200
+        assert r.json()["entries"] == []
+
+    def test_get_trend_endpoint_returns_entries(self, api_client, tmp_path, monkeypatch):
+        import app.api_server as srv
+        (tmp_path / "data").mkdir()
+        log = tmp_path / "data" / "audit_log.jsonl"
+        log.write_text(
+            '{"timestamp":"2026-06-01","overall":"pass","model":"m","categories":{},"confidence":{}}\n'
+            '{"timestamp":"2026-06-08","overall":"fail","model":"m","categories":{},"confidence":{}}\n'
+        )
+        monkeypatch.setattr(srv, "BASE_DIR", tmp_path)
+        r = api_client.get("/trend")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["count"] == 2
+        assert body["entries"][0]["overall"] == "pass"
+
+    def test_get_trend_endpoint_last_param(self, api_client, tmp_path, monkeypatch):
+        import app.api_server as srv
+        (tmp_path / "data").mkdir()
+        log = tmp_path / "data" / "audit_log.jsonl"
+        lines = [f'{{"timestamp":"2026-0{i}-01","overall":"pass","model":"m","categories":{{}},"confidence":{{}}}}'
+                 for i in range(1, 6)]
+        log.write_text("\n".join(lines))
+        monkeypatch.setattr(srv, "BASE_DIR", tmp_path)
+        r = api_client.get("/trend?last=2")
+        assert r.json()["count"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Scheduled eval — config validation, disabled-by-default behaviour
+# ---------------------------------------------------------------------------
+
+class TestScheduledEval:
+
+    def test_scheduler_does_not_start_when_disabled(self, tmp_path):
+        cfg = tmp_path / "config.yaml"
+        cfg.write_text("schedule:\n  enabled: false\n  cron: '0 0 * * 0'\n")
+        with patch("app.scheduler.CONFIG_PATH", cfg):
+            from app.scheduler import start_scheduler, stop_scheduler, _scheduler as sch_before
+            start_scheduler()
+            from app.scheduler import _scheduler
+            # Scheduler should remain None when disabled
+            assert _scheduler is None or not _scheduler.running
+
+    def test_scheduler_rejects_invalid_cron(self, tmp_path, caplog):
+        cfg = tmp_path / "config.yaml"
+        cfg.write_text("schedule:\n  enabled: true\n  cron: 'bad cron'\n")
+        import logging
+        with patch("app.scheduler.CONFIG_PATH", cfg):
+            with caplog.at_level(logging.WARNING, logger="app.scheduler"):
+                from app.scheduler import start_scheduler
+                start_scheduler()
+        assert any("Invalid cron" in r.message or "cron" in r.message.lower()
+                   for r in caplog.records)
+
+    def test_scheduler_config_cron_default(self):
+        import yaml
+        from pathlib import Path
+        cfg_path = Path("config/config.yaml")
+        if cfg_path.exists():
+            with open(cfg_path) as f:
+                cfg = yaml.safe_load(f)
+            assert "schedule" in cfg
+            assert "cron" in cfg["schedule"]
+            # default weekly Sunday midnight
+            assert cfg["schedule"]["cron"].strip() == "0 0 * * 0"
+
+    def test_scheduler_enabled_flag_defaults_to_false(self):
+        import yaml
+        from pathlib import Path
+        cfg_path = Path("config/config.yaml")
+        if cfg_path.exists():
+            with open(cfg_path) as f:
+                cfg = yaml.safe_load(f)
+            assert cfg["schedule"]["enabled"] is False

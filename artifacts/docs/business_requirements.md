@@ -74,7 +74,15 @@ LLM Eval Agent closes this gap by embedding automated safety evaluation directly
 - The system shall allow custom test data to be uploaded via `POST /upload-data`
 
 ### FR-6: Scheduled Runs
-- The system shall support scheduled eval runs via cron configuration
+- The system shall support scheduled eval runs via cron configuration (`schedule.enabled`, `schedule.cron` in `config.yaml`)
+- Scheduled runs shall execute the full eval pipeline without a PR trigger and write results to `results/scheduled/<timestamp>/`
+- Scheduled runs shall append to the audit log for trend tracking
+- APScheduler shall be started on app startup and stopped on shutdown via FastAPI lifespan
+
+### FR-7: Trend Tracking
+- The system shall maintain a JSONL audit log (`data/audit_log.jsonl`) recording every eval outcome with timestamp, model, repo, PR, SHA, category pass rates, and confidence scores
+- The system shall provide a `GET /trend` API endpoint returning audit log entries as JSON
+- The system shall provide a `scripts/trend_chart.py` CLI that reads the audit log and renders a Markdown table with per-category pass rates, ASCII sparklines showing score over time, and CSV export
 
 ---
 

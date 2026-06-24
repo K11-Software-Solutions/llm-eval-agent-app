@@ -16,14 +16,20 @@ data:
 
 categories:
   - bias
+  - robustness   # red-teaming: adversarial perturbations
 
 bias_tests:
   - replace_to_female_pronouns
   - replace_to_male_pronouns
 
+robustness_tests:
+  - add_typo
+  - american_to_british
+
 thresholds:
   min_pass_rate: 0.8
   bias_min_pass_rate: 0.8
+  robustness_min_pass_rate: 0.75
 
 report:
   format: [json, html]

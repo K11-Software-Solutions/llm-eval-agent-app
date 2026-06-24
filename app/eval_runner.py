@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.agent import LLMEvalAgent
@@ -14,9 +15,10 @@ from app.github_client import GitHubClient, format_scorecard
 
 logger = logging.getLogger(__name__)
 
-RESULTS_ROOT = Path(os.environ.get("RESULTS_DIR", "results"))
-CONFIG_PATH  = Path(os.environ.get("CONFIG_PATH", "config/config.yaml"))
-DEFAULT_DATA = Path(os.environ.get("DATA_FILE", "data/sample_data.jsonl"))
+RESULTS_ROOT   = Path(os.environ.get("RESULTS_DIR", "results"))
+CONFIG_PATH    = Path(os.environ.get("CONFIG_PATH", "config/config.yaml"))
+DEFAULT_DATA   = Path(os.environ.get("DATA_FILE", "data/sample_data.jsonl"))
+AUDIT_LOG_PATH = Path(os.environ.get("AUDIT_LOG_PATH", "data/audit_log.jsonl"))
 
 
 def _resolve_data_file() -> str:
@@ -33,6 +35,42 @@ def _resolve_data_file() -> str:
     raise FileNotFoundError(
         f"No data file found. Upload one via POST /upload-data or set DATA_FILE env var."
     )
+
+
+def _compute_confidence(model_name: str, data_file: str) -> dict:
+    """Run a quick inference pass to get model confidence statistics."""
+    try:
+        from transformers import pipeline as hf_pipeline
+        pipe = hf_pipeline("text-classification", model=model_name)
+        texts = []
+        with open(data_file) as f:
+            for line in f:
+                row = json.loads(line.strip())
+                if row.get("text"):
+                    texts.append(row["text"])
+        if not texts:
+            return {}
+        outputs = pipe(texts[:50])  # cap at 50 samples
+        scores = [o["score"] for o in outputs]
+        return {
+            "avg_confidence": round(sum(scores) / len(scores), 3),
+            "min_confidence": round(min(scores), 3),
+            "max_confidence": round(max(scores), 3),
+            "sample_count":  len(scores),
+        }
+    except Exception as e:
+        logger.warning(f"Confidence scoring skipped: {e}")
+        return {}
+
+
+def _append_audit_log(entry: dict):
+    """Append one eval result line to the JSONL audit trail."""
+    try:
+        AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(AUDIT_LOG_PATH, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.warning(f"Audit log write failed: {e}")
 
 
 async def run_eval_for_pr(
@@ -76,6 +114,24 @@ async def run_eval_for_pr(
         results = _parse_results(run_dir)
         overall = "pass" if results.get("all_passed", False) else "fail"
         results["overall"] = overall
+
+        # Confidence scoring (non-blocking — uses cached model)
+        model_name = agent.models[0].get("name", "") if agent.models else ""
+        if model_name:
+            results["confidence"] = _compute_confidence(model_name, data_file)
+
+        # Audit log entry
+        _append_audit_log({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "run_id":    run_id,
+            "repo":      f"{owner}/{repo}",
+            "pr":        pr_number,
+            "sha":       head_sha,
+            "model":     results.get("model", "unknown"),
+            "overall":   overall,
+            "categories": results.get("categories", {}),
+            "confidence": results.get("confidence", {}),
+        })
 
         scorecard_md = format_scorecard(results)
         conclusion = "success" if overall == "pass" else "failure"

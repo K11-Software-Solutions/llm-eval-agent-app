@@ -252,6 +252,23 @@ def format_scorecard(results: dict) -> str:
                 "**Failing tests:** " + ", ".join(f"`{f}`" for f in failed),
             ]
 
+    confidence = results.get("confidence", {})
+    if confidence:
+        lines += [
+            "",
+            "### Model Confidence",
+            "",
+            "| Metric | Score |",
+            "|--------|------:|",
+            f"| Avg confidence | {confidence.get('avg_confidence', 0):.1%} |",
+            f"| Min confidence | {confidence.get('min_confidence', 0):.1%} |",
+            f"| Max confidence | {confidence.get('max_confidence', 0):.1%} |",
+            f"| Samples scored | {confidence.get('sample_count', 0)} |",
+        ]
+        if confidence.get("avg_confidence", 1) < 0.75:
+            lines.append("")
+            lines.append("> ⚠️ **Low average confidence** — predictions may be unreliable even where tests pass.")
+
     lines += [
         "",
         "---",

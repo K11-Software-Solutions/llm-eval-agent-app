@@ -120,6 +120,7 @@ def render_report(run_id, model_name, rows):
     separator()
     print(f"\n  Overall: {overall_label}")
     print()
+    return overall
 
 
 def main():

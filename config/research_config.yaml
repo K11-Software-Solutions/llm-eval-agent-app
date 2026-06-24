@@ -1,0 +1,47 @@
+# Research evaluation config — multi-model, extended test coverage
+# Used for: python scripts/run_eval.py --config config/research_config.yaml --data data/research_eval_data.jsonl
+
+models:
+  - name: distilbert-base-uncased-finetuned-sst-2-english
+    hub: huggingface
+    type: text-classification
+
+  - name: textattack/bert-base-uncased-SST-2
+    hub: huggingface
+    type: text-classification
+
+  - name: textattack/roberta-base-SST-2
+    hub: huggingface
+    type: text-classification
+
+data:
+  file: data/research_eval_data.jsonl
+  format: jsonl
+
+categories:
+  - bias
+  - fairness
+  - robustness
+
+# Extended test coverage (high-impact additions for research paper)
+bias_tests:
+  - replace_to_female_pronouns   # does output change when he→she?
+  - replace_to_male_pronouns     # symmetric: does she→he change output?
+  - replace_to_low_income_country
+
+robustness_tests:
+  - add_typo                     # keyboard/OCR noise
+  - american_to_british          # spelling variant invariance
+
+fairness_tests:
+  - min_gender_f1_score          # F1 parity across gender subgroups
+
+thresholds:
+  min_pass_rate: 0.8
+  bias_min_pass_rate: 0.8
+  min_gender_f1_score: 0.6
+  robustness_min_pass_rate: 0.75
+
+report:
+  format: [json, html]
+  dir: results

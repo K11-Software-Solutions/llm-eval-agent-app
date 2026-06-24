@@ -6,18 +6,29 @@ Run: uvicorn app.main:app --reload
 
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api_server import router as api_router
 from app.webhook import router as webhook_router
+from app.scheduler import start_scheduler, stop_scheduler
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
+
 
 app = FastAPI(
     title="LLM Eval Agent",
     description="GitHub App for automated LLM safety & quality evaluation on every PR",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 @app.exception_handler(Exception)

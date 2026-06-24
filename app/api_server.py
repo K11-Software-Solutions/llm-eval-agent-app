@@ -107,6 +107,27 @@ def get_logs(run_id: str):
     return {"run_id": run_id, "log": log_file.read_text(encoding="utf-8")}
 
 
+@router.get("/trend")
+def get_trend(last: int = 0):
+    """Return audit log entries as JSON trend data."""
+    log_path = BASE_DIR / "data" / "audit_log.jsonl"
+    if not log_path.exists():
+        return {"entries": [], "message": "No eval runs recorded yet."}
+    entries = []
+    with open(log_path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    entries.sort(key=lambda e: e.get("timestamp", ""))
+    if last:
+        entries = entries[-last:]
+    return {"entries": entries, "count": len(entries)}
+
+
 @router.delete("/runs/{run_id}")
 def delete_run(run_id: str):
     run_dir = _safe_resolve(RESULTS_ROOT, run_id)

@@ -36,5 +36,5 @@ report:
   dir: results
 
 schedule:
-  enabled: false
-  cron: "0 0 * * *"
+  enabled: false          # set true to run eval on cron without a PR
+  cron: "0 0 * * 0"      # weekly Sunday midnight UTC

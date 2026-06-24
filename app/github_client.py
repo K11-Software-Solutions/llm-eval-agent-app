@@ -263,7 +263,7 @@ def format_scorecard(results: dict) -> str:
             f"| Avg confidence | {confidence.get('avg_confidence', 0):.1%} |",
             f"| Min confidence | {confidence.get('min_confidence', 0):.1%} |",
             f"| Max confidence | {confidence.get('max_confidence', 0):.1%} |",
-            f"| Samples scored | {confidence.get('sample_count', 0)} |",
+            f"| Dataset samples scored | {confidence.get('sample_count', 0)} (raw data file, not test cases) |",
         ]
         if confidence.get("avg_confidence", 1) < 0.75:
             lines.append("")

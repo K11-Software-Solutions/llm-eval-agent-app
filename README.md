@@ -1,8 +1,6 @@
 # LLM Eval Agent — GitHub App
 
-<p align="center">
-  <img src="artifacts/LLM_Eval_Agent.png" alt="LLM Eval Agent" width="480"/>
-</p>
+![LLM Eval Agent](artifacts/LLM_Eval_Agent.png)
 
 <p align="center">
   <img src="artifacts/k11_logo.png" alt="K11 Software Solutions" width="160"/>

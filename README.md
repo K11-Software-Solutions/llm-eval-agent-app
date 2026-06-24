@@ -3,10 +3,6 @@
 ![LLM Eval Agent](artifacts/LLM_Eval_Agent.png)
 
 <p align="center">
-  <img src="artifacts/k11_logo.png" alt="K11 Software Solutions" width="160"/>
-</p>
-
-<p align="center">
   <a href="https://github.com/apps/llm-eval-agent"><img src="https://img.shields.io/badge/GitHub-App-blue?logo=github" alt="GitHub App"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0"/></a>
   <a href="https://llm-eval-agent-app-production.up.railway.app/health"><img src="https://img.shields.io/badge/deployment-Railway-blueviolet?logo=railway" alt="Railway"/></a>
